@@ -1,12 +1,14 @@
-# Vagrant Box Provisioning for Node
+# Vagrant Box Provisioning for a Rails/PostgreSQL/Redis Environment
 
 ## Stack
 
 With this provision, you get the following stack:
 
 * Update apt packages
-* Basic packages (eg. curl, git, etc)
-* Node
+* Basic packages (eg. curl, git, imagemagick, npm, nodejs, redis-server, etc)
+* Node (version can be specified under `provisioning/group_vars/all/config.yml`)
+* Vim
+* PostgreSQL
 * PhantomJS
 
 **PS**: This whole README assumes a Mac OS X setup. Please feel free to contribute if you would like to add support for other platforms.
@@ -45,8 +47,11 @@ and voila!
 ```
 git clone [insert repo here]
 cd [repo name]
+cp vagrant.rb.example vagrant.rb
 mkdir pkg
 ```
+
+If you need to, change the settings in `vagrant.rb` to suit your needs (eg. memory allocation).
 
 ### Setup Vagrant Box
 
@@ -100,4 +105,3 @@ to point to the box, or by initializing a new Vagrant setup by running the `init
 
 ```
 vagrant init ychaker/node; vagrant up --provider virtualbox
-```

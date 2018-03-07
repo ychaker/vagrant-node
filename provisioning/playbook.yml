@@ -1,66 +1,58 @@
 ---
 - hosts: all
-  user: vagrant
-  vars:
-    phantom_js_file: phantomjs-1.9.8-linux-x86_64
-    phantom_js_ext: .tar.bz2
-    phantom_js_md5: 4ea7aa79e45fbc487a63ef4788a18ef7
-    phantom_js_sha256: a1d9628118e270f26c4ddd1d7f3502a93b48ede334b8585d11c1c3ae7bc7163a
+  gather_facts: False
+  become: true
 
   tasks:
-    - name : Update APT package cache
-      command: apt-get update
-      sudo: yes
+  - name: install python 2
+    raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
 
-    - name: Install python-apt  (Required by ANSIBLE)
-      command: apt-get -y install python-apt
-      sudo: yes
 
-    - name: Remove Apache2
+# Basics
+- hosts:  all
+  become: true
+  roles:
+    - bearandgiraffe.base
+    - {
+      role:           bearandgiraffe.vim,
+      vim_username:   '{{ username }}',
+      vim_group_name: '{{ group_name }}'
+    }
+    - {
+      role:           bearandgiraffe.node,
+      nodejs_version: '{{ node_version }}'
+    }
+    - bearandgiraffe.phantomjs
+
+# DB
+- hosts:  all
+  become: true
+  roles:
+    - {
+      role:                   bearandgiraffe.postgresql,
+      postgresql_db_name:     '{{ db_name }}',
+      postgresql_db_owner:    '{{ db_user }}',
+      postgresql_db_password: '{{ db_password }}'
+    }
+
+# Remove Apache
+- hosts:  all
+  user:   vagrant
+  tasks:
+    - name: Ramove Apache2
       apt: name={{ item }} state=absent purge=yes force=yes
       with_items:
-        - apache2
-        - apache2-utils
-      sudo: yes
+       - apache2
+       - apache2-utils
+      become: true
 
-    - name: Install packages
-      apt: name={{ item }} state=installed update_cache=yes cache_valid_time=3600
-      with_items:
-        - git-core
-        - postfix
-        - mailutils
-        - vim
-        - nginx
-        - curl
-        - nodejs
-        - npm
-        - build-essential
-        - redis-server
-        - libqt4-dev
-        - libqtwebkit-dev
-        - imagemagick
-        - qt4-dev-tools
-        - libqt4-dev
-        - libqt4-core
-        - libqt4-gui
-        - python-dev
-        - python-virtualenv
-        - libmysqlclient-dev
-        - nodejs-legacy
-      sudo: yes
+# Heroku
+- hosts:  all
+  become: true
+  roles:
+    - bearandgiraffe.heroku-cli
 
-    # Install PhantomJS
-    - stat: path=/usr/local/bin/{{ phantom_js_file }}/bin/phantomjs
-      register: phantomjs_exists
-
-    - include: setup_phantom_js.yml
-      when: phantomjs_exists|failed
-
-    # Install specified node requirements.
-    - name: Install global node packages
-      npm: name={{ item }} global=yes
-      with_items:
-        - grunt-cli
-        - bower
-      sudo: yes
-
+- hosts: all
+  become: true
+  roles:
+    - bearandgiraffe.selenium
